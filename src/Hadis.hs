@@ -17,6 +17,8 @@ data Command = DEL Key
              | GETSET Key Value
              | APPEND Key Value
              | STRLEN Key
+             | INCR Key
+             | DECR Key
              deriving (Show, Read)
 
 fff (a, b)= return (replyVal a, b)
@@ -32,6 +34,8 @@ runCommand (GET k)      m = runStateT (get k)      m >>= fff
 runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
 runCommand (APPEND k v) m = runStateT (append k v) m >>= fff
 runCommand (STRLEN k)   m = runStateT (strlen k)   m >>= fff
+runCommand (INCR k)     m = runStateT (incr k)     m >>= fff
+runCommand (DECR k)     m = runStateT (decr k)     m >>= fff
 
 rc :: StateKVIO ()
 rc = do

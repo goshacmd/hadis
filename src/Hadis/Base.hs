@@ -5,6 +5,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Control.Monad.State (StateT, state)
 import           Control.Arrow
+import           Text.Read
 import           Text.Regex.Glob.String
 ---
 
@@ -48,8 +49,17 @@ append k v = state $ (length . Map.findWithDefault "" k &&& id) . Map.alter (Jus
 strlen :: Key -> StateKVIO Int
 strlen k = state $ \m -> (length $ Map.findWithDefault "" k m, m)
 
+incr :: Key -> StateKVIO (Maybe Int)
+incr k = state $ (readMaybeInt . Map.findWithDefault "" k &&& id) . Map.alter (fmap (show . (+1)) . readMaybeInt . withDefault "0") k
+
+decr :: Key -> StateKVIO (Maybe Int)
+decr k = state $ (readMaybeInt . Map.findWithDefault "" k &&& id) . Map.alter (fmap (show . flip (-) 1) . readMaybeInt . withDefault "0") k
+
 --- Util
 
 withDefault :: a -> Maybe a -> a
 withDefault _ (Just a) = a
 withDefault d Nothing  = d
+
+readMaybeInt :: String -> Maybe Int
+readMaybeInt = readMaybe

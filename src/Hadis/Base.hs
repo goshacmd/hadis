@@ -5,7 +5,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Control.Monad.State as S
-import           Control.Monad.State (StateT, state, gets)
+import           Control.Monad.State (StateT, state, gets, modify)
 import           Control.Arrow
 import           Text.Read hiding (readEither)
 import           Text.Regex.Glob.String
@@ -20,13 +20,13 @@ type StateKVIO = StateT KVMap IO
 --- Commands: keys
 
 del :: Key -> StateKVIO ()
-del k = state $ \m -> ((), Map.delete k m)
+del k = modify $ Map.delete k
 
 keys :: String -> StateKVIO [Key]
 keys pattern = gets $ filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> StateKVIO ()
-rename k1 k2 = state $ \m -> ((), Map.mapKeys (\x -> if x == k1 then k2 else x) m)
+rename k1 k2 = modify $ Map.mapKeys (\x -> if x == k1 then k2 else x)
 
 exists :: Key -> StateKVIO Bool
 exists k = gets $ Map.member k
@@ -37,7 +37,7 @@ kType k = gets $ \m -> if Map.member k m then KeyString else KeyNone
 --- Commands: strings
 
 set :: Key -> Value -> StateKVIO ()
-set k v = state $ \m -> ((), Map.insert k v m)
+set k v = modify $ Map.insert k v
 
 get :: Key -> StateKVIO (Maybe Value)
 get k = gets $ Map.lookup k

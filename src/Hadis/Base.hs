@@ -5,6 +5,7 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Control.Monad.State (StateT, state)
 import           Control.Arrow
+import           Text.Regex.Glob.String
 ---
 
 type Key = String
@@ -18,8 +19,8 @@ type StateKVIO = StateT KVMap IO
 del :: Key -> StateKVIO ()
 del k = state $ \m -> ((), Map.delete k m)
 
-keys :: StateKVIO [Key]
-keys = state $ \m -> (Map.keys m, m)
+keys :: String -> StateKVIO [Key]
+keys pat = state $ \m -> (filter (match pat) $ Map.keys m, m)
 
 rename :: Key -> Key -> StateKVIO ()
 rename k1 k2 = state $ \m -> ((), Map.mapKeys (\x -> if x == k1 then k2 else x) m)

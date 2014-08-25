@@ -4,7 +4,7 @@ A Haskell implementation of Redis server. **WIP**.
 
 ```bash
 $ hadis
-> KEYS
+> KEYS "*"
 ["a"]
 > GET "a"
 "123"

@@ -11,7 +11,7 @@ data Command = DEL Key
              | RENAME Key Key
              | EXISTS Key
              | TYPE Key
-             | KEYS
+             | KEYS String
              | SET Key Value
              | GET Key
              | GETSET Key Value
@@ -26,7 +26,7 @@ runCommand (DEL k)      m = runStateT (del k)      m >>= fff
 runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
 runCommand (EXISTS k)   m = runStateT (exists k)   m >>= fff
 runCommand (TYPE k)     m = runStateT (kType k)    m >>= fff
-runCommand KEYS         m = runStateT keys         m >>= fff
+runCommand (KEYS p)     m = runStateT (keys p)     m >>= fff
 runCommand (SET k v)    m = runStateT (set k v)    m >>= fff
 runCommand (GET k)      m = runStateT (get k)      m >>= fff
 runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff

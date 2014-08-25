@@ -21,6 +21,12 @@ get k = state $ \m -> (Map.lookup k m, m)
 getset :: Key -> Value -> State KVMap (Maybe Value)
 getset k v = state (Map.lookup k &&& Map.insert k v)
 
+del :: Key -> State KVMap ()
+del k = state $ \m -> ((), Map.delete k m)
+
+keys :: State KVMap [Key]
+keys = state $ \m -> (Map.keys m, m)
+
 ---
 
 kvm = Map.fromList [("a", "123")]
@@ -29,6 +35,7 @@ someMan :: State KVMap (Maybe Value)
 someMan = do
   set "b" "456"
   set "c" "111"
+  del "c"
   getset "a" "777"
 
 main :: IO ()

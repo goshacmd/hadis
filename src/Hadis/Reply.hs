@@ -12,6 +12,10 @@ instance Show a => Reply (Maybe a) where
   replyVal (Just a) = show a
   replyVal Nothing  = show ""
 
+instance Show a => Reply (Either String a) where
+  replyVal (Right a) = show a
+  replyVal (Left a)  = "ERROR: " ++ a
+
 instance Reply Bool where
   replyVal True  = "1"
   replyVal False = "0"

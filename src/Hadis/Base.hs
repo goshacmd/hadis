@@ -3,7 +3,7 @@ module Hadis.Base where
 ---
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Control.Monad.State hiding (get)
+import           Control.Monad.State (StateT, state)
 import           Control.Arrow
 ---
 
@@ -40,3 +40,12 @@ get k = state $ \m -> (Map.lookup k m, m)
 
 getset :: Key -> Value -> StateKVIO (Maybe Value)
 getset k v = state (Map.lookup k &&& Map.insert k v)
+
+append :: Key -> Value -> StateKVIO Int
+append k v = state $ (length . Map.findWithDefault "" k &&& id) . Map.alter (Just . (++v) . withDefault "") k
+
+--- Util
+
+withDefault :: a -> Maybe a -> a
+withDefault _ (Just a) = a
+withDefault d Nothing  = d

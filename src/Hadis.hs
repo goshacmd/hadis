@@ -7,27 +7,29 @@ import           Control.Monad.State hiding (get)
 import           System.IO
 ---
 
-data Command = SET Key Value
-             | GET Key
-             | GETSET Key Value
-             | DEL Key
+data Command = DEL Key
              | RENAME Key Key
              | EXISTS Key
              | TYPE Key
              | KEYS
+             | SET Key Value
+             | GET Key
+             | GETSET Key Value
+             | APPEND Key Value
              deriving (Show, Read)
 
 fff (a, b)= return (replyVal a, b)
 
 runCommand :: Command -> KVMap -> IO (String, KVMap)
-runCommand (SET k v)    m = runStateT (set k v)    m >>= fff
-runCommand (GET k)      m = runStateT (get k)      m >>= fff
-runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
 runCommand (DEL k)      m = runStateT (del k)      m >>= fff
 runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
 runCommand (EXISTS k)   m = runStateT (exists k)   m >>= fff
 runCommand (TYPE k)     m = runStateT (kType k)    m >>= fff
 runCommand KEYS         m = runStateT keys         m >>= fff
+runCommand (SET k v)    m = runStateT (set k v)    m >>= fff
+runCommand (GET k)      m = runStateT (get k)      m >>= fff
+runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
+runCommand (APPEND k v) m = runStateT (append k v) m >>= fff
 
 rc :: StateKVIO ()
 rc = do
@@ -35,7 +37,7 @@ rc = do
   m <- S.get
   let command = read line :: Command
   (r,n) <- liftIO . runCommand command $ m
-  modify (const n)
+  put n
   liftIO $ putStrLn r
   rc
 

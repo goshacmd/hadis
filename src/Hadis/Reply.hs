@@ -10,11 +10,14 @@ instance Reply () where
 
 instance Show a => Reply (Maybe a) where
   replyVal (Just a) = show a
-  replyVal Nothing  = ""
+  replyVal Nothing  = show ""
 
 instance Reply Bool where
   replyVal True  = "1"
   replyVal False = "0"
+
+instance Reply Int where
+  replyVal = show
 
 instance Reply KeyType where
   replyVal KeyString = "string"

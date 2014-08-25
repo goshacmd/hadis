@@ -4,7 +4,8 @@ module Hadis.Base where
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe
-import           Control.Monad.State (StateT, state)
+import qualified Control.Monad.State as S
+import           Control.Monad.State (StateT, state, gets)
 import           Control.Arrow
 import           Text.Read hiding (readEither)
 import           Text.Regex.Glob.String
@@ -22,16 +23,16 @@ del :: Key -> StateKVIO ()
 del k = state $ \m -> ((), Map.delete k m)
 
 keys :: String -> StateKVIO [Key]
-keys pat = state $ \m -> (filter (match pat) $ Map.keys m, m)
+keys pattern = gets $ filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> StateKVIO ()
 rename k1 k2 = state $ \m -> ((), Map.mapKeys (\x -> if x == k1 then k2 else x) m)
 
 exists :: Key -> StateKVIO Bool
-exists k = state $ \m -> (Map.member k m, m)
+exists k = gets $ Map.member k
 
 kType :: Key -> StateKVIO KeyType
-kType k = state $ \m -> (if Map.member k m then KeyString else KeyNone, m)
+kType k = gets $ \m -> if Map.member k m then KeyString else KeyNone
 
 --- Commands: strings
 
@@ -39,7 +40,7 @@ set :: Key -> Value -> StateKVIO ()
 set k v = state $ \m -> ((), Map.insert k v m)
 
 get :: Key -> StateKVIO (Maybe Value)
-get k = state $ \m -> (Map.lookup k m, m)
+get k = gets $ Map.lookup k
 
 getset :: Key -> Value -> StateKVIO (Maybe Value)
 getset k v = state (Map.lookup k &&& Map.insert k v)
@@ -48,7 +49,7 @@ append :: Key -> Value -> StateKVIO Int
 append k v = state $ first (length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
 
 strlen :: Key -> StateKVIO Int
-strlen k = state $ \m -> (length $ Map.findWithDefault "" k m, m)
+strlen k = gets $ length . Map.findWithDefault "" k
 
 incr :: Key -> StateKVIO (Maybe Int)
 incr k = state $ first (>>= readMaybe) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k

@@ -1,14 +1,18 @@
 module Hadis.Reply where
 
-class Replyable a where
+class Reply a where
   replyVal :: a -> String
 
-instance Replyable () where
+instance Reply () where
   replyVal () = "OK"
 
-instance Show a => Replyable (Maybe a) where
+instance Show a => Reply (Maybe a) where
   replyVal (Just a) = show a
-  replyVal Nothing = ""
+  replyVal Nothing  = ""
 
-instance Show a => Replyable [a] where
+instance Reply Bool where
+  replyVal True  = "1"
+  replyVal False = "0"
+
+instance Show a => Reply [a] where
   replyVal = show

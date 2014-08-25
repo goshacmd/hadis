@@ -12,18 +12,20 @@ data Command = SET Key Value
              | GETSET Key Value
              | DEL Key
              | RENAME Key Key
+             | EXISTS Key
              | KEYS
              deriving (Show, Read)
 
 fff (a, b)= return (replyVal a, b)
 
 runCommand :: Command -> KVMap -> IO (String, KVMap)
-runCommand (SET k v)    m = runStateT (set k v) m    >>= fff
-runCommand (GET k)      m = runStateT (get k)   m    >>= fff
+runCommand (SET k v)    m = runStateT (set k v)    m >>= fff
+runCommand (GET k)      m = runStateT (get k)      m >>= fff
 runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
-runCommand (DEL k)      m = runStateT (del k) m      >>= fff
+runCommand (DEL k)      m = runStateT (del k)      m >>= fff
 runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
-runCommand KEYS         m = runStateT keys m         >>= fff
+runCommand (EXISTS k)   m = runStateT (exists k)   m >>= fff
+runCommand KEYS         m = runStateT keys         m >>= fff
 
 rc :: StateKVIO ()
 rc = do

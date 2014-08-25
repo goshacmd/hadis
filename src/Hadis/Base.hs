@@ -29,3 +29,6 @@ keys = state $ \m -> (Map.keys m, m)
 
 rename :: Key -> Key -> StateKVIO ()
 rename k1 k2 = state $ \m -> ((), Map.mapKeys (\x -> if x == k1 then k2 else x) m)
+
+exists :: Key -> StateKVIO Bool
+exists k = state $ \m -> (Map.member k m, m)

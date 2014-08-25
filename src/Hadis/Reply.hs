@@ -1,5 +1,7 @@
 module Hadis.Reply where
 
+import Hadis.Base
+
 class Reply a where
   replyVal :: a -> String
 
@@ -13,6 +15,10 @@ instance Show a => Reply (Maybe a) where
 instance Reply Bool where
   replyVal True  = "1"
   replyVal False = "0"
+
+instance Reply KeyType where
+  replyVal KeyString = "string"
+  replyVal KeyNone   = "none"
 
 instance Show a => Reply [a] where
   replyVal = show

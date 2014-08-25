@@ -13,6 +13,7 @@ data Command = SET Key Value
              | DEL Key
              | RENAME Key Key
              | EXISTS Key
+             | TYPE Key
              | KEYS
              deriving (Show, Read)
 
@@ -25,6 +26,7 @@ runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
 runCommand (DEL k)      m = runStateT (del k)      m >>= fff
 runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
 runCommand (EXISTS k)   m = runStateT (exists k)   m >>= fff
+runCommand (TYPE k)     m = runStateT (kType k)    m >>= fff
 runCommand KEYS         m = runStateT keys         m >>= fff
 
 rc :: StateKVIO ()

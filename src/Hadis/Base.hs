@@ -3,6 +3,7 @@ module Hadis.Base where
 ---
 import           Data.Map (Map)
 import qualified Data.Map as Map
+import           Data.Maybe
 import           Control.Monad.State (StateT, state)
 import           Control.Arrow
 import           Text.Read hiding (readEither)
@@ -44,19 +45,26 @@ getset :: Key -> Value -> StateKVIO (Maybe Value)
 getset k v = state (Map.lookup k &&& Map.insert k v)
 
 append :: Key -> Value -> StateKVIO Int
-append k v = state $ (length . Map.findWithDefault "" k &&& id) . Map.alter (Just . (++v) . withDefault "") k
+append k v = state $ first (length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
 
 strlen :: Key -> StateKVIO Int
 strlen k = state $ \m -> (length $ Map.findWithDefault "" k m, m)
 
 incr :: Key -> StateKVIO (Maybe Int)
-incr k = state $ (readMaybe . Map.findWithDefault "" k &&& id) . Map.alter (fmap (show . (+1)) . readMaybe . withDefault "0") k
+incr k = state $ first (>>= readMaybe) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
 
 decr :: Key -> StateKVIO (Maybe Int)
-decr k = state $ (readMaybe . Map.findWithDefault "" k &&& id) . Map.alter (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
+decr k = state $ first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
 
 --- Util
 
 withDefault :: a -> Maybe a -> a
 withDefault _ (Just a) = a
 withDefault d Nothing  = d
+
+alterAndRet :: Ord a => (Maybe b -> Maybe b) -> a -> Map a b -> (Maybe b, Map a b)
+alterAndRet f k m = (nv, i nv)
+  where v = Map.lookup k m
+        nv = f v
+        i (Just a) = Map.insert k a m
+        i Nothing  = m

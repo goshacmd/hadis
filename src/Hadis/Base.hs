@@ -44,6 +44,9 @@ getset k v = state (Map.lookup k &&& Map.insert k v)
 append :: Key -> Value -> StateKVIO Int
 append k v = state $ (length . Map.findWithDefault "" k &&& id) . Map.alter (Just . (++v) . withDefault "") k
 
+strlen :: Key -> StateKVIO Int
+strlen k = state $ \m -> (length $ Map.findWithDefault "" k m, m)
+
 --- Util
 
 withDefault :: a -> Maybe a -> a

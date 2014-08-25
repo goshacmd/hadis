@@ -7,7 +7,7 @@ import           Data.Maybe
 import qualified Control.Monad.State as S
 import           Control.Monad.State (StateT, state, gets, modify)
 import           Control.Arrow
-import           Text.Read hiding (readEither)
+import           Text.Read
 import           Text.Regex.Glob.String
 ---
 

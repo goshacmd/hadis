@@ -2,9 +2,11 @@
 import           Hadis.Base
 import           Hadis.Reply
 import qualified Data.Map as Map
+import           Data.Maybe
 import qualified Control.Monad.State as S
 import           Control.Monad.State hiding (get)
 import           System.IO
+import           Text.Read (readMaybe)
 ---
 
 data Command = DEL Key
@@ -21,7 +23,7 @@ data Command = DEL Key
              | DECR Key
              deriving (Show, Read)
 
-fff (a, b)= return (replyVal a, b)
+fff (a, b) = return (replyVal a, b)
 
 runCommand :: Command -> KVMap -> IO (String, KVMap)
 runCommand (DEL k)      m = runStateT (del k)      m >>= fff
@@ -37,18 +39,24 @@ runCommand (STRLEN k)   m = runStateT (strlen k)   m >>= fff
 runCommand (INCR k)     m = runStateT (incr k)     m >>= fff
 runCommand (DECR k)     m = runStateT (decr k)     m >>= fff
 
-rc :: StateKVIO ()
-rc = do
+repl :: StateKVIO ()
+repl = do
   line <- liftIO prompt
   m <- S.get
-  let command = read line :: Command
-  (r,n) <- liftIO . runCommand command $ m
-  put n
-  liftIO $ putStrLn r
-  rc
+
+  let command = readMaybe line :: Maybe Command
+
+  if isJust command then do
+    (r, n) <- liftIO . runCommand (fromJust command) $ m
+    put n
+    liftIO . putStrLn $ r
+  else
+    liftIO . putStrLn $ "invalid command: " ++ line
+
+  repl
 
 main :: IO ()
-main = evalStateT rc $ Map.fromList [("a", "123")]
+main = evalStateT repl $ Map.fromList [("a", "123")]
 
 prompt = do
   putStr "> "

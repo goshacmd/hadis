@@ -29,17 +29,38 @@ del k = state $ \m -> ((), Map.delete k m)
 keys :: StateKVIO [Key]
 keys = state $ \m -> (Map.keys m, m)
 
+rename :: Key -> Key -> StateKVIO ()
+rename k1 k2 = state $ \m -> ((), Map.mapKeys (\x -> if x == k1 then k2 else x) m)
+
 ---
 
-data Command = SET Key Value | GET Key | GETSET Key Value | DEL String | KEYS deriving (Show, Read)
+data Command = SET Key Value
+             | GET Key
+             | GETSET Key Value
+             | DEL Key
+             | RENAME Key Key
+             | KEYS
+             deriving (Show, Read)
 
-fff (a, b)= return (show a, b)
+class Replyable a where replyVal :: a -> String
+
+instance Replyable () where replyVal () = "OK"
+
+instance Show a => Replyable (Maybe a) where
+  replyVal (Just a) = show a
+  replyVal Nothing = ""
+
+instance Show a => Replyable [a] where
+  replyVal = show
+
+fff (a, b)= return (replyVal a, b)
 
 runCommand :: Command -> KVMap -> IO (String, KVMap)
 runCommand (SET k v)    m = runStateT (set k v) m    >>= fff
 runCommand (GET k)      m = runStateT (get k)   m    >>= fff
 runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
 runCommand (DEL k)      m = runStateT (del k) m      >>= fff
+runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
 runCommand KEYS         m = runStateT keys m         >>= fff
 
 rc :: StateKVIO ()

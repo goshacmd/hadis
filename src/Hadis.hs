@@ -1,7 +1,6 @@
 ---
 import           Hadis.Base
 import           Hadis.Commands
-import           Hadis.Reply
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Control.Monad.State as S
@@ -26,19 +25,19 @@ data Command = DEL Key
 
 fff (a, b) = return (replyVal a, b)
 
-runCommand :: Command -> KVMap -> IO (String, KVMap)
-runCommand (DEL k)      m = runStateT (del k)      m >>= fff
-runCommand (RENAME o n) m = runStateT (rename o n) m >>= fff
-runCommand (EXISTS k)   m = runStateT (exists k)   m >>= fff
-runCommand (TYPE k)     m = runStateT (kType k)    m >>= fff
-runCommand (KEYS p)     m = runStateT (keys p)     m >>= fff
-runCommand (SET k v)    m = runStateT (set k v)    m >>= fff
-runCommand (GET k)      m = runStateT (get k)      m >>= fff
-runCommand (GETSET k v) m = runStateT (getset k v) m >>= fff
-runCommand (APPEND k v) m = runStateT (append k v) m >>= fff
-runCommand (STRLEN k)   m = runStateT (strlen k)   m >>= fff
-runCommand (INCR k)     m = runStateT (incr k)     m >>= fff
-runCommand (DECR k)     m = runStateT (decr k)     m >>= fff
+runCommand :: Command -> CommandReply
+runCommand (DEL k)      = del k
+runCommand (RENAME o n) = rename o n
+runCommand (EXISTS k)   = exists k
+runCommand (TYPE k)     = kType k
+runCommand (KEYS p)     = keys p
+runCommand (SET k v)    = set k v
+runCommand (GET k)      = get k
+runCommand (GETSET k v) = getset k v
+runCommand (APPEND k v) = append k v
+runCommand (STRLEN k)   = strlen k
+runCommand (INCR k)     = incr k
+runCommand (DECR k)     = decr k
 
 repl :: StateKVIO ()
 repl = do
@@ -48,7 +47,7 @@ repl = do
   let command = readMaybe line :: Maybe Command
 
   if isJust command then do
-    (r, n) <- liftIO . runCommand (fromJust command) $ m
+    (r, n) <- liftIO $ runStateT (runCommand (fromJust command)) m >>= fff
     put n
     liftIO . putStrLn $ r
   else

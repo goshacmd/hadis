@@ -14,52 +14,55 @@ import           Text.Regex.Glob.String
 ---
 
 type ErrorMessage = String
-type Result a = Either ErrorMessage a
-type CommandReply a = StateKVIO (Result a)
 
-aOk f = modify f >> return (Right ())
-err msg = return (Left msg)
-ret f = gets $ return . f
+data ReplyVal = OK
+              | Err ErrorMessage
+              | IntVal Int
+              | StrVal String
+              | ListVal [String]
+              | BoolVal Bool deriving (Show, Eq)
+
+type CommandReply = StateKVIO ReplyVal
 
 --- Commands: keys
 
-del :: Key -> CommandReply ()
+del :: Key -> CommandReply
 del k = aOk $ Map.delete k
 
-keys :: String -> CommandReply [Key]
-keys pattern = ret $ filter (match pattern) . Map.keys
+keys :: String -> CommandReply
+keys pattern = gets $ ListVal . filter (match pattern) . Map.keys
 
-rename :: Key -> Key -> CommandReply ()
+rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (\x -> if x == k1 then k2 else x)
 
-exists :: Key -> CommandReply Bool
-exists k = ret $ Map.member k
+exists :: Key -> CommandReply
+exists k = gets $ BoolVal . Map.member k
 
-kType :: Key -> CommandReply KeyType
-kType k = ret $ \m -> if Map.member k m then KeyString else KeyNone
+kType :: Key -> CommandReply
+kType k = gets $ StrVal . \m -> if Map.member k m then "string" else "none"
 
 --- Commands: strings
 
-set :: Key -> Value -> CommandReply ()
+set :: Key -> Value -> CommandReply
 set k v = aOk $ Map.insert k v
 
-get :: Key -> CommandReply (Maybe Value)
-get k = ret $ Map.lookup k
+get :: Key -> CommandReply
+get k = gets $ toStr . Map.lookup k
 
-getset :: Key -> Value -> CommandReply (Maybe Value)
-getset k v = state (return . Map.lookup k &&& Map.insert k v)
+getset :: Key -> Value -> CommandReply
+getset k v = state (toStr . Map.lookup k &&& Map.insert k v)
 
-append :: Key -> Value -> CommandReply Int
-append k v = state $ first (return . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
+append :: Key -> Value -> CommandReply
+append k v = state $ first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
 
-strlen :: Key -> CommandReply Int
-strlen k = ret $ length . Map.findWithDefault "" k
+strlen :: Key -> CommandReply
+strlen k = gets $ IntVal . length . Map.findWithDefault "" k
 
-incr :: Key -> CommandReply (Maybe Int)
-incr k = state $ first (return . (>>= readMaybe)) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
+incr :: Key -> CommandReply
+incr k = state $ first (maybeToVal . (>>= readMaybe)) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
 
-decr :: Key -> CommandReply (Maybe Int)
-decr k = state $ first (return . (>>= readMaybe)) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
+decr :: Key -> CommandReply
+decr k = state $ first (maybeToVal . (>>= readMaybe)) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
 
 --- Util
 
@@ -69,3 +72,22 @@ alterAndRet f k m = (nv, i nv)
         nv = f v
         i (Just a) = Map.insert k a m
         i Nothing  = m
+
+replyVal :: ReplyVal -> String
+replyVal OK              = "OK"
+replyVal (Err msg)       = "ERR " ++ msg
+replyVal (IntVal i)      = show i
+replyVal (StrVal s)      = show s
+replyVal (ListVal ls)    = show ls
+replyVal (BoolVal True)  = "1"
+replyVal (BoolVal False) = "0"
+
+aOk f = modify f >> return OK
+
+toStr :: Maybe String -> ReplyVal
+toStr (Just a) = StrVal a
+toStr _        = StrVal ""
+
+maybeToVal :: Maybe Int -> ReplyVal
+maybeToVal (Just x) = IntVal x
+maybeToVal _        = Err ""

@@ -1,5 +1,6 @@
 ---
 import           Hadis.Base
+import           Hadis.Commands
 import           Hadis.Reply
 import qualified Data.Map as Map
 import           Data.Maybe

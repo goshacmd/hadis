@@ -85,9 +85,7 @@ replyVal (BoolVal False) = "0"
 aOk f = modify f >> return OK
 
 toStr :: Maybe String -> ReplyVal
-toStr (Just a) = StrVal a
-toStr _        = StrVal ""
+toStr = StrVal . withDefault ""
 
 maybeToVal :: Maybe Int -> ReplyVal
-maybeToVal (Just x) = IntVal x
-maybeToVal _        = Err ""
+maybeToVal = withDefault (Err "") . fmap IntVal

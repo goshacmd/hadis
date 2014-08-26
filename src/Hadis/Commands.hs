@@ -13,45 +13,53 @@ import           Text.Read
 import           Text.Regex.Glob.String
 ---
 
+type ErrorMessage = String
+type Result a = Either ErrorMessage a
+type CommandReply a = StateKVIO (Result a)
+
+aOk f = modify f >> return (Right ())
+err msg = return (Left msg)
+ret f = gets $ return . f
+
 --- Commands: keys
 
-del :: Key -> StateKVIO ()
-del k = modify $ Map.delete k
+del :: Key -> CommandReply ()
+del k = aOk $ Map.delete k
 
-keys :: String -> StateKVIO [Key]
-keys pattern = gets $ filter (match pattern) . Map.keys
+keys :: String -> CommandReply [Key]
+keys pattern = ret $ filter (match pattern) . Map.keys
 
-rename :: Key -> Key -> StateKVIO ()
-rename k1 k2 = modify $ Map.mapKeys (\x -> if x == k1 then k2 else x)
+rename :: Key -> Key -> CommandReply ()
+rename k1 k2 = aOk $ Map.mapKeys (\x -> if x == k1 then k2 else x)
 
-exists :: Key -> StateKVIO Bool
-exists k = gets $ Map.member k
+exists :: Key -> CommandReply Bool
+exists k = ret $ Map.member k
 
-kType :: Key -> StateKVIO KeyType
-kType k = gets $ \m -> if Map.member k m then KeyString else KeyNone
+kType :: Key -> CommandReply KeyType
+kType k = ret $ \m -> if Map.member k m then KeyString else KeyNone
 
 --- Commands: strings
 
-set :: Key -> Value -> StateKVIO ()
-set k v = modify $ Map.insert k v
+set :: Key -> Value -> CommandReply ()
+set k v = aOk $ Map.insert k v
 
-get :: Key -> StateKVIO (Maybe Value)
-get k = gets $ Map.lookup k
+get :: Key -> CommandReply (Maybe Value)
+get k = ret $ Map.lookup k
 
-getset :: Key -> Value -> StateKVIO (Maybe Value)
-getset k v = state (Map.lookup k &&& Map.insert k v)
+getset :: Key -> Value -> CommandReply (Maybe Value)
+getset k v = state (return . Map.lookup k &&& Map.insert k v)
 
-append :: Key -> Value -> StateKVIO Int
-append k v = state $ first (length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
+append :: Key -> Value -> CommandReply Int
+append k v = state $ first (return . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
 
-strlen :: Key -> StateKVIO Int
-strlen k = gets $ length . Map.findWithDefault "" k
+strlen :: Key -> CommandReply Int
+strlen k = ret $ length . Map.findWithDefault "" k
 
-incr :: Key -> StateKVIO (Maybe Int)
-incr k = state $ first (>>= readMaybe) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
+incr :: Key -> CommandReply (Maybe Int)
+incr k = state $ first (return . (>>= readMaybe)) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
 
-decr :: Key -> StateKVIO (Maybe Int)
-decr k = state $ first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
+decr :: Key -> CommandReply (Maybe Int)
+decr k = state $ first (return . (>>= readMaybe)) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
 
 --- Util
 

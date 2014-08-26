@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Hadis.Reply where
 
 import Hadis.Base
@@ -11,6 +13,10 @@ instance Reply () where
 instance Show a => Reply (Maybe a) where
   replyVal (Just a) = show a
   replyVal Nothing  = show ""
+
+instance Reply a => Reply (Either String a) where
+  replyVal (Left e) = "ERROR: " ++ e
+  replyVal (Right a) = replyVal a
 
 instance Reply Bool where
   replyVal True  = "1"

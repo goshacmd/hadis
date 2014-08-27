@@ -20,7 +20,7 @@ data ReplyVal = OK
               | IntVal Int
               | StrVal String
               | ListVal [String]
-              | BoolVal Bool deriving (Show, Eq)
+              deriving (Show, Eq)
 
 type CommandReply = StateKVIO ReplyVal
 
@@ -36,7 +36,7 @@ rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (\x -> if x == k1 then k2 else x)
 
 exists :: Key -> CommandReply
-exists k = gets $ BoolVal . Map.member k
+exists k = gets $ boolVal . Map.member k
 
 kType :: Key -> CommandReply
 kType k = gets $ StrVal . \m -> if Map.member k m then "string" else "none"
@@ -79,13 +79,15 @@ replyVal (Err msg)       = "ERR " ++ msg
 replyVal (IntVal i)      = show i
 replyVal (StrVal s)      = show s
 replyVal (ListVal ls)    = show ls
-replyVal (BoolVal True)  = "1"
-replyVal (BoolVal False) = "0"
 
 aOk f = modify f >> return OK
 
 toStr :: Maybe String -> ReplyVal
 toStr = StrVal . withDefault ""
+
+boolVal :: Bool -> ReplyVal
+boolVal True  = IntVal 1
+boolVal False = IntVal 0
 
 maybeToVal :: Maybe Int -> ReplyVal
 maybeToVal = withDefault (Err "") . fmap IntVal

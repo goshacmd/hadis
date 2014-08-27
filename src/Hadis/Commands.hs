@@ -13,12 +13,12 @@ import           Text.Read
 import           Text.Regex.Glob.String
 ---
 
-type ErrorMessage = String
+data HadisError = WrongType deriving (Show, Eq)
 
 data ReplyVal = OK
-              | Err ErrorMessage
+              | Err HadisError
               | IntVal Int
-              | StrVal String
+              | StrVal (Maybe String)
               | ListVal [String]
               deriving (Show, Eq)
 
@@ -39,7 +39,7 @@ exists :: Key -> CommandReply
 exists k = gets $ boolVal . Map.member k
 
 kType :: Key -> CommandReply
-kType k = gets $ StrVal . \m -> if Map.member k m then "string" else "none"
+kType k = gets $ StrVal . Just . \m -> if Map.member k m then "string" else "none"
 
 --- Commands: strings
 
@@ -47,10 +47,10 @@ set :: Key -> Value -> CommandReply
 set k v = aOk $ Map.insert k v
 
 get :: Key -> CommandReply
-get k = gets $ toStr . Map.lookup k
+get k = gets $ StrVal . Map.lookup k
 
 getset :: Key -> Value -> CommandReply
-getset k v = state (toStr . Map.lookup k &&& Map.insert k v)
+getset k v = state (StrVal . Map.lookup k &&& Map.insert k v)
 
 append :: Key -> Value -> CommandReply
 append k v = state $ first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
@@ -74,20 +74,18 @@ alterAndRet f k m = (nv, i nv)
         i Nothing  = m
 
 replyVal :: ReplyVal -> String
-replyVal OK              = "OK"
-replyVal (Err msg)       = "ERR " ++ msg
-replyVal (IntVal i)      = show i
-replyVal (StrVal s)      = show s
-replyVal (ListVal ls)    = show ls
+replyVal OK                = "OK"
+replyVal (Err WrongType)   = "ERR wrong type"
+replyVal (IntVal i)        = show i
+replyVal (StrVal (Just s)) = show s
+replyVal (StrVal Nothing)  = "(nil)"
+replyVal (ListVal ls)      = show ls
 
 aOk f = modify f >> return OK
-
-toStr :: Maybe String -> ReplyVal
-toStr = StrVal . withDefault ""
 
 boolVal :: Bool -> ReplyVal
 boolVal True  = IntVal 1
 boolVal False = IntVal 0
 
 maybeToVal :: Maybe Int -> ReplyVal
-maybeToVal = withDefault (Err "") . fmap IntVal
+maybeToVal = withDefault (Err WrongType) . fmap IntVal

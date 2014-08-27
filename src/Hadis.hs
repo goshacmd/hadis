@@ -1,10 +1,11 @@
 ---
-import           Hadis.Base
 import           Hadis.Commands
 import qualified Data.Map as Map
 import           Data.Maybe
 import qualified Control.Monad.State as S
 import           Control.Monad.State hiding (get)
+import           Control.Monad.Identity
+import           Control.Monad.Error
 import           System.IO
 import           Text.Read (readMaybe)
 ---
@@ -22,8 +23,6 @@ data Command = DEL Key
              | INCR Key
              | DECR Key
              deriving (Show, Read)
-
-fff (a, b) = return (replyVal a, b)
 
 runCommand :: Command -> CommandReply
 runCommand (DEL k)      = del k
@@ -47,9 +46,14 @@ repl = do
   let command = readMaybe line :: Maybe Command
 
   if isJust command then do
-    (r, n) <- liftIO $ runStateT (runCommand (fromJust command)) m >>= fff
+    let c = fromJust command
+        rc = runCommand c
+
+    (r, n) <- liftIO $ runStateT rc m
+
     put n
-    liftIO . putStrLn $ r
+
+    liftIO . putStrLn . finalReply . runIdentity . runErrorT $ r
   else
     liftIO . putStrLn $ "invalid command: " ++ line
 

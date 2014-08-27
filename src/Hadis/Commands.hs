@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Hadis.Commands where
 
 ---
@@ -10,7 +12,7 @@ import           Control.Monad.State (StateT, state, gets, modify)
 import           Control.Monad.Identity
 import           Control.Monad.Error
 import           Control.Arrow
-import           Text.Read
+import           Text.Read hiding (lift)
 import           Text.Regex.Glob.String
 ---
 
@@ -30,9 +32,10 @@ data ReplyVal = OK
               | ListVal [String]
               deriving (Show, Eq)
 
-type ValOrError = ErrorT RedisError Identity ReplyVal
+type CommandReply = ErrorT RedisError StateKVIO ReplyVal
 
-type CommandReply = StateKVIO ValOrError
+runCommand :: KVMap -> CommandReply -> IO (Either RedisError ReplyVal, KVMap)
+runCommand s c = S.runStateT (runErrorT c) s
 
 --- Commands: keys
 
@@ -40,16 +43,16 @@ del :: Key -> CommandReply
 del k = aOk $ Map.delete k
 
 keys :: String -> CommandReply
-keys pattern = gets $ return . ListVal . filter (match pattern) . Map.keys
+keys pattern = gets $ ListVal . filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (\x -> if x == k1 then k2 else x)
 
 exists :: Key -> CommandReply
-exists k = gets $ return . boolVal . Map.member k
+exists k = gets $ boolVal . Map.member k
 
 kType :: Key -> CommandReply
-kType k = gets $ return . StrVal . Just . \m -> if Map.member k m then "string" else "none"
+kType k = gets $ StrVal . Just . \m -> if Map.member k m then "string" else "none"
 
 --- Commands: strings
 
@@ -57,22 +60,22 @@ set :: Key -> Value -> CommandReply
 set k v = aOk $ Map.insert k v
 
 get :: Key -> CommandReply
-get k = gets $ return . StrVal . Map.lookup k
+get k = gets $ StrVal . Map.lookup k
 
 getset :: Key -> Value -> CommandReply
-getset k v = state (return . StrVal . Map.lookup k &&& Map.insert k v)
+getset k v = state (StrVal . Map.lookup k &&& Map.insert k v)
 
 append :: Key -> Value -> CommandReply
-append k v = state $ first (return . IntVal . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
+append k v = state $ first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
 
 strlen :: Key -> CommandReply
-strlen k = gets $ return . IntVal . length . Map.findWithDefault "" k
+strlen k = gets $ IntVal . length . Map.findWithDefault "" k
 
 incr :: Key -> CommandReply
-incr k = state $ first (maybeToVal . (>>= readMaybe)) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k
+incr k = state (first (>>= readMaybe) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k) >>= maybeToVal
 
 decr :: Key -> CommandReply
-decr k = state $ first (maybeToVal . (>>= readMaybe)) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k
+decr k = state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k) >>= maybeToVal
 
 --- Util
 
@@ -94,16 +97,13 @@ finalReply :: Either RedisError ReplyVal -> String
 finalReply (Left e) = "ERR " ++ show e
 finalReply (Right x) = replyVal x
 
-fr :: ValOrError -> String
-fr = finalReply . runIdentity . runErrorT
-
-aOk :: S.MonadState s m => (s -> s) -> m ValOrError
-aOk f = modify f >> return (return OK)
+aOk :: S.MonadState s m => (s -> s) -> m ReplyVal
+aOk f = modify f >> return OK
 
 boolVal :: Bool -> ReplyVal
 boolVal True  = IntVal 1
 boolVal False = IntVal 0
 
-maybeToVal :: Maybe Int -> ValOrError
+maybeToVal :: MonadError RedisError m => Maybe Int -> m ReplyVal
 maybeToVal (Just i) = return $ IntVal i
 maybeToVal Nothing  = throwError WrongType

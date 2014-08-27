@@ -24,19 +24,19 @@ data Command = DEL Key
              | DECR Key
              deriving (Show, Read)
 
-runCommand :: Command -> CommandReply
-runCommand (DEL k)      = del k
-runCommand (RENAME o n) = rename o n
-runCommand (EXISTS k)   = exists k
-runCommand (TYPE k)     = kType k
-runCommand (KEYS p)     = keys p
-runCommand (SET k v)    = set k v
-runCommand (GET k)      = get k
-runCommand (GETSET k v) = getset k v
-runCommand (APPEND k v) = append k v
-runCommand (STRLEN k)   = strlen k
-runCommand (INCR k)     = incr k
-runCommand (DECR k)     = decr k
+commandFor :: Command -> CommandReply
+commandFor (DEL k)      = del k
+commandFor (RENAME o n) = rename o n
+commandFor (EXISTS k)   = exists k
+commandFor (TYPE k)     = kType k
+commandFor (KEYS p)     = keys p
+commandFor (SET k v)    = set k v
+commandFor (GET k)      = get k
+commandFor (GETSET k v) = getset k v
+commandFor (APPEND k v) = append k v
+commandFor (STRLEN k)   = strlen k
+commandFor (INCR k)     = incr k
+commandFor (DECR k)     = decr k
 
 repl :: StateKVIO ()
 repl = do
@@ -47,13 +47,13 @@ repl = do
 
   if isJust command then do
     let c = fromJust command
-        rc = runCommand c
+        rc = commandFor c
 
-    (r, n) <- liftIO $ runStateT rc m
+    (r, n) <- liftIO $ runCommand m rc
 
     put n
 
-    liftIO . putStrLn . finalReply . runIdentity . runErrorT $ r
+    liftIO . putStrLn . finalReply $ r
   else
     liftIO . putStrLn $ "invalid command: " ++ line
 

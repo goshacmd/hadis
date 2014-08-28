@@ -72,10 +72,16 @@ strlen :: Key -> CommandReply
 strlen k = gets $ IntVal . length . Map.findWithDefault "" k
 
 incr :: Key -> CommandReply
-incr k = state (first (>>= readMaybe) . alterAndRet (fmap (show . (+1)) . readMaybe . withDefault "0") k) >>= maybeToVal
+incr k = incrby k 1
+
+incrby :: Key -> Int -> CommandReply
+incrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . (+i)) . readMaybe . withDefault "0") k) >>= maybeToVal
 
 decr :: Key -> CommandReply
-decr k = state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) 1) . readMaybe . withDefault "0") k) >>= maybeToVal
+decr k = decrby k 1
+
+decrby :: Key -> Int -> CommandReply
+decrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) i) . readMaybe . withDefault "0") k) >>= maybeToVal
 
 --- Util
 

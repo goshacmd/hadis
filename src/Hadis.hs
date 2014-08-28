@@ -21,7 +21,9 @@ data Command = DEL Key
              | APPEND Key Value
              | STRLEN Key
              | INCR Key
+             | INCRBY Key Int
              | DECR Key
+             | DECRBY Key Int
              deriving (Show, Read)
 
 commandFor :: Command -> CommandReply
@@ -36,7 +38,9 @@ commandFor (GETSET k v) = getset k v
 commandFor (APPEND k v) = append k v
 commandFor (STRLEN k)   = strlen k
 commandFor (INCR k)     = incr k
+commandFor (INCRBY k i) = incrby k i
 commandFor (DECR k)     = decr k
+commandFor (DECRBY k i) = decrby k i
 
 repl :: StateKVIO ()
 repl = do

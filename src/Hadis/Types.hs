@@ -43,6 +43,7 @@ data Command = DEL Key
              | DECRBY Key Int
              | LLEN Key
              | LPUSH Key String
+             | LPOP Key
              deriving (Show, Read)
 
 isStringVal :: Value -> Bool

@@ -3,7 +3,6 @@
 module Hadis.Commands where
 
 ---
-import           Hadis.Util
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe
@@ -66,7 +65,7 @@ getset :: Key -> Value -> CommandReply
 getset k v = state (StrVal . Map.lookup k &&& Map.insert k v)
 
 append :: Key -> Value -> CommandReply
-append k v = state $ first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . withDefault "") k
+append k v = state $ first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . fromMaybe "") k
 
 strlen :: Key -> CommandReply
 strlen k = gets $ IntVal . length . Map.findWithDefault "" k
@@ -75,13 +74,13 @@ incr :: Key -> CommandReply
 incr k = incrby k 1
 
 incrby :: Key -> Int -> CommandReply
-incrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . (+i)) . readMaybe . withDefault "0") k) >>= maybeToVal
+incrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . (+i)) . readMaybe . fromMaybe "0") k) >>= maybeToVal
 
 decr :: Key -> CommandReply
 decr k = decrby k 1
 
 decrby :: Key -> Int -> CommandReply
-decrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) i) . readMaybe . withDefault "0") k) >>= maybeToVal
+decrby k i = state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) i) . readMaybe . fromMaybe "0") k) >>= maybeToVal
 
 --- Util
 

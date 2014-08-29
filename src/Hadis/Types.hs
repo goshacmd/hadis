@@ -48,6 +48,7 @@ data Command = DEL Key
              | LPOP Key
              | SADD Key String
              | SCARD Key
+             | SISMEMBER Key String
              deriving (Show, Read)
 
 isStringVal :: Value -> Bool

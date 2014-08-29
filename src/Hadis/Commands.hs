@@ -21,25 +21,26 @@ runCommand :: KVMap -> ErrorState a -> IO (Either RedisError a, KVMap)
 runCommand s c = runStateT (runErrorT c) s
 
 commandFor :: Command -> CommandReply
-commandFor (DEL k)      = del k
-commandFor (RENAME o n) = rename o n
-commandFor (EXISTS k)   = exists k
-commandFor (TYPE k)     = kType k
-commandFor (KEYS p)     = keys p
-commandFor (SET k v)    = set k v
-commandFor (GET k)      = get k
-commandFor (GETSET k v) = getset k v
-commandFor (APPEND k v) = append k v
-commandFor (STRLEN k)   = strlen k
-commandFor (INCR k)     = incr k
-commandFor (INCRBY k i) = incrby k i
-commandFor (DECR k)     = decr k
-commandFor (DECRBY k i) = decrby k i
-commandFor (LLEN k)     = llen k
-commandFor (LPUSH k v)  = lpush k v
-commandFor (LPOP k)     = lpop k
-commandFor (SADD k v)   = sadd k v
-commandFor (SCARD k)    = scard k
+commandFor (DEL k)         = del k
+commandFor (RENAME o n)    = rename o n
+commandFor (EXISTS k)      = exists k
+commandFor (TYPE k)        = kType k
+commandFor (KEYS p)        = keys p
+commandFor (SET k v)       = set k v
+commandFor (GET k)         = get k
+commandFor (GETSET k v)    = getset k v
+commandFor (APPEND k v)    = append k v
+commandFor (STRLEN k)      = strlen k
+commandFor (INCR k)        = incr k
+commandFor (INCRBY k i)    = incrby k i
+commandFor (DECR k)        = decr k
+commandFor (DECRBY k i)    = decrby k i
+commandFor (LLEN k)        = llen k
+commandFor (LPUSH k v)     = lpush k v
+commandFor (LPOP k)        = lpop k
+commandFor (SADD k v)      = sadd k v
+commandFor (SCARD k)       = scard k
+commandFor (SISMEMBER k v) = sismember k v
 
 --- Commands: keys
 
@@ -121,12 +122,16 @@ lpop k = ensureList k
 
 sadd :: Key -> String -> CommandReply
 sadd k v = ensureSet k
-        >> gets (ReplyInt . (\x -> if x then 0 else 1) . Set.member v . maybe Set.empty valToSet . Map.lookup k)
-        >>= \r -> state $ \m -> (r, Map.alter (fmap ValueSet . Just . Set.insert v . maybe Set.empty valToSet) k m)
+        >> gets (ReplyInt . boolToInt . Set.notMember v . maybe Set.empty valToSet . Map.lookup k)
+        >>= preserveModify (Map.alter (fmap ValueSet . Just . Set.insert v . maybe Set.empty valToSet) k)
 
 scard :: Key -> CommandReply
 scard k = ensureSet k
        >> gets (ReplyInt . Set.size . maybe Set.empty valToSet . Map.lookup k)
+
+sismember :: Key -> String -> CommandReply
+sismember k v = ensureSet k
+             >> gets (ReplyInt . boolToInt . Set.member v . maybe Set.empty valToSet . Map.lookup k)
 
 --- Util
 
@@ -151,6 +156,9 @@ finalReply (Right x) = replyVal x
 aOk :: MonadState s m => (s -> s) -> m ReplyVal
 aOk f = modify f >> return OK
 
+preserveModify :: MonadState s m => (s -> s) -> a -> m a
+preserveModify f a = state $ \m -> (a, f m)
+
 boolVal :: Bool -> ReplyVal
 boolVal True  = ReplyInt 1
 boolVal False = ReplyInt 0
@@ -161,6 +169,10 @@ maybeToVal Nothing  = throwError WrongType
 
 idUnless :: Eq a => a -> a -> a -> a
 idUnless k1 k2 x = if x == k1 then k2 else x
+
+boolToInt :: Bool -> Int
+boolToInt True = 1
+boolToInt False = 0
 
 ensure :: (Value -> Bool) -> Key -> ErrorState ()
 ensure f k = check WrongType (maybe True f . Map.lookup k)

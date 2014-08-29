@@ -46,6 +46,7 @@ data Command = DEL Key
              | LLEN Key
              | LPUSH Key String
              | LPOP Key
+             | RPUSH Key String
              | SADD Key String
              | SCARD Key
              | SISMEMBER Key String

@@ -23,6 +23,7 @@ commandFor (DECRBY k i)    = decrby k i
 commandFor (LLEN k)        = llen k
 commandFor (LPUSH k v)     = lpush k v
 commandFor (LPOP k)        = lpop k
+commandFor (RPUSH k v)     = rpush k v
 commandFor (SADD k v)      = sadd k v
 commandFor (SCARD k)       = scard k
 commandFor (SISMEMBER k v) = sismember k v

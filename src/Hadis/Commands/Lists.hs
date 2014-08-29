@@ -21,21 +21,19 @@ alterList :: ([String] -> [String])
              -> (ReplyVal, KVMap)
 alterList f = kvAlter (f . toList) (toVal . Just) (ReplyInt . length)
 
+listGets k f = ensureList k >> gets f
+listState k f = ensureList k >> state f
+
 llen :: Key -> CommandReply
-llen k = ensureList k
-       >> gets (ReplyInt . length . toList . Map.lookup k)
+llen k = listGets k $ ReplyInt . length . toList . Map.lookup k
 
 lpush :: Key -> String -> CommandReply
-lpush k v = ensureList k
-          >> state (alterList (v:) k)
+lpush k v = listState k $ alterList (v:) k
 
 lpop :: Key -> CommandReply
-lpop k = ensureList k
-       >> state (\m ->
+lpop k = listState k $ \m ->
            let (h, t) = (maybeHead &&& maybeTail) . toList $ Map.lookup k m
-               nm = Map.alter (const $ toVal t) k m
-           in (ReplyStr h, nm))
+           in (ReplyStr h, Map.alter (const $ toVal t) k m)
 
 rpush :: Key -> String -> CommandReply
-rpush k v = ensureList k
-          >> state (alterList (++ [v]) k)
+rpush k v = listState k $ alterList (++ [v]) k

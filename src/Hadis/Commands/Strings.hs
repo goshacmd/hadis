@@ -25,37 +25,34 @@ toInt = readMaybe . maybe "0" valToString
 alterStr f = kvAlter (f . toStr) (Just . ValueString)
 alterInt f = kvAlter (fmap f . toInt) (fmap ValueString) (>>= readMaybe)
 
+strGets k f = ensureString k >> gets f
+strState k f = ensureString k >> state f
+
 set :: Key -> String -> CommandReply
 set k v = aOk $ Map.insert k (ValueString v)
 
 get :: Key -> CommandReply
-get k = ensureString k
-      >> gets (ReplyStr . fmap valToString . Map.lookup k)
+get k = strGets k $ ReplyStr . fmap valToString . Map.lookup k
 
 getset :: Key -> String -> CommandReply
-getset k v = ensureString k
-           >> state (ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v))
+getset k v = strState k $ ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v)
 
 append :: Key -> String -> CommandReply
-append k v = ensureString k
-           >> state (alterStr (++v) (ReplyInt . length) k)
+append k v = strState k $ alterStr (++v) (ReplyInt . length) k
 
 strlen :: Key -> CommandReply
-strlen k = ensureString k
-         >> gets (ReplyInt . length . toStr . Map.lookup k)
+strlen k = strGets k $ ReplyInt . length . toStr . Map.lookup k
 
 incr :: Key -> CommandReply
 incr k = incrby k 1
 
 incrby :: Key -> Int -> CommandReply
-incrby k i = ensureString k
-           >> state (alterInt (show . (+i)) k)
+incrby k i = strState k (alterInt (show . (+i)) k)
            >>= maybeToVal
 
 decr :: Key -> CommandReply
 decr k = decrby k 1
 
 decrby :: Key -> Int -> CommandReply
-decrby k i = ensureString k
-           >> state (alterInt (show . flip (-) i) k)
+decrby k i = strState k (alterInt (show . flip (-) i) k)
            >>= maybeToVal

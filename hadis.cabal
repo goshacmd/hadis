@@ -3,30 +3,25 @@
 
 name:                hadis
 version:             0.1.0.0
--- synopsis:
--- description"
 homepage:            https://github.com/goshakkk/hadis
 license:             MIT
 license-file:        LICENSE
 author:              Gosha Arinich
 maintainer:          me@goshakkk.name
--- copyright:
 category:            Network
 build-type:          Simple
--- extra-source-files:
 cabal-version:       >=1.10
 
 executable hadis
   main-is: Hadis.hs
-  other-modules:
-                  Hadis.Types
-                  Hadis.Error
-                  Hadis.Commands
-  -- other-extensions:
-  build-depends:
-                    base >=4.7 && <4.8
-                  , containers >=0.5 && <0.6
-                  , mtl >=2.1 && <2.2
-                  , hxt-regex-xmlschema >=9.1.0
+  other-modules:        Hadis.Types
+                        Hadis.Error
+                        Hadis.Commands
+
+  build-depends:        base >=4.7 && <4.8
+                      , containers >=0.5 && <0.6
+                      , mtl >=2.1 && <2.2
+                      , hxt-regex-xmlschema >=9.1.0
+
   hs-source-dirs: src
   default-language: Haskell2010

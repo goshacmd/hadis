@@ -15,7 +15,9 @@ cabal-version:       >=1.10
 executable hadis
   main-is: Hadis.hs
   other-modules:        Hadis.Types
-                        Hadis.Error
+                        Hadis.Util
+                        Hadis.Ext.Error
+                        Hadis.Ext.State
                         Hadis.Commands
 
   build-depends:        base >=4.7 && <4.8

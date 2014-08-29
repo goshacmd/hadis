@@ -4,7 +4,9 @@ module Hadis.Commands where
 
 ---
 import           Hadis.Types
-import           Hadis.Error (check)
+import           Hadis.Util
+import           Hadis.Ext.Error
+import           Hadis.Ext.State
 import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Set (Set)
@@ -54,7 +56,7 @@ rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (idUnless k1 k2)
 
 exists :: Key -> CommandReply
-exists k = gets $ boolVal . Map.member k
+exists k = gets $ ReplyInt . boolToInt . Map.member k
 
 kType :: Key -> CommandReply
 kType k = gets $ ReplyStr . Just . \m -> if Map.member k m then "string" else "none"
@@ -156,23 +158,8 @@ finalReply (Right x) = replyVal x
 aOk :: MonadState s m => (s -> s) -> m ReplyVal
 aOk f = modify f >> return OK
 
-preserveModify :: MonadState s m => (s -> s) -> a -> m a
-preserveModify f a = state $ \m -> (a, f m)
-
-boolVal :: Bool -> ReplyVal
-boolVal True  = ReplyInt 1
-boolVal False = ReplyInt 0
-
 maybeToVal :: MonadError RedisError m => Maybe Int -> m ReplyVal
-maybeToVal (Just i) = return $ ReplyInt i
-maybeToVal Nothing  = throwError WrongType
-
-idUnless :: Eq a => a -> a -> a -> a
-idUnless k1 k2 x = if x == k1 then k2 else x
-
-boolToInt :: Bool -> Int
-boolToInt True = 1
-boolToInt False = 0
+maybeToVal = maybeToResult WrongType ReplyInt
 
 ensure :: (Value -> Bool) -> Key -> ErrorState ()
 ensure f k = check WrongType (maybe True f . Map.lookup k)

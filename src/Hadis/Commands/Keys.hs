@@ -1,4 +1,10 @@
-module Hadis.Commands.Keys where
+module Hadis.Commands.Keys
+  ( del
+  , keys
+  , rename
+  , exists
+  , kType
+  ) where
 
 ---
 import           Hadis.Util.Commands

@@ -1,4 +1,8 @@
-module Hadis.Commands.Sets where
+module Hadis.Commands.Sets
+  ( sadd
+  , scard
+  , sismember
+  ) where
 
 ---
 import           Hadis.Util
@@ -8,16 +12,20 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
+---
+
+toSet = maybe Set.empty valToSet
+getSet k = toSet . Map.lookup k
 
 sadd :: Key -> String -> CommandReply
 sadd k v = ensureSet k
-        >> gets (ReplyInt . boolToInt . Set.notMember v . maybe Set.empty valToSet . Map.lookup k)
-        >>= preserveModify (Map.alter (fmap ValueSet . Just . Set.insert v . maybe Set.empty valToSet) k)
+        >> gets (ReplyInt . boolToInt . Set.notMember v . getSet k)
+        >>= preserveModify (Map.alter (fmap ValueSet . Just . Set.insert v . toSet) k)
 
 scard :: Key -> CommandReply
 scard k = ensureSet k
-       >> gets (ReplyInt . Set.size . maybe Set.empty valToSet . Map.lookup k)
+        >> gets (ReplyInt . Set.size . getSet k)
 
 sismember :: Key -> String -> CommandReply
 sismember k v = ensureSet k
-             >> gets (ReplyInt . boolToInt . Set.member v . maybe Set.empty valToSet . Map.lookup k)
+              >> gets (ReplyInt . boolToInt . Set.member v . getSet k)

@@ -23,7 +23,7 @@ repl = do
   repl
 
 main :: IO ()
-main = evalStateT repl $ Map.fromList [("a", "123")]
+main = evalStateT repl $ Map.fromList [("a", ValueString "123")]
 
 prompt = do
   putStr "> "

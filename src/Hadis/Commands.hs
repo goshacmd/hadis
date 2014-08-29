@@ -7,7 +7,7 @@ import           Hadis.Types
 import           Hadis.Error (check)
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Maybe             (fromMaybe, fromJust)
+import           Data.Maybe             (fromMaybe, fromJust, maybe)
 import           Control.Monad.State    (MonadState, runStateT, state, gets, modify)
 import           Control.Monad.Error    (MonadError, runErrorT, throwError)
 import           Control.Arrow          ((&&&), first)
@@ -35,9 +35,7 @@ commandFor (DECR k)     = decr k
 commandFor (DECRBY k i) = decrby k i
 
 isStringValue :: Key -> KVMap -> Bool
-isStringValue k m = case Map.lookup k m of
-                      Just x  -> True
-                      Nothing -> True -- unused key can't cause wrong type error
+isStringValue k m = maybe True isStringVal $ Map.lookup k m
 
 ensure :: (KVMap -> Bool) -> ErrorState ()
 ensure = check WrongType
@@ -51,7 +49,7 @@ del :: Key -> CommandReply
 del k = aOk $ Map.delete k
 
 keys :: String -> CommandReply
-keys pattern = gets $ ListVal . filter (match pattern) . Map.keys
+keys pattern = gets $ ReplyList . filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (idUnless k1 k2)
@@ -60,36 +58,44 @@ exists :: Key -> CommandReply
 exists k = gets $ boolVal . Map.member k
 
 kType :: Key -> CommandReply
-kType k = gets $ StrVal . Just . \m -> if Map.member k m then "string" else "none"
+kType k = gets $ ReplyStr . Just . \m -> if Map.member k m then "string" else "none"
 
 --- Commands: strings
 
-set :: Key -> Value -> CommandReply
-set k v = aOk $ Map.insert k v
+set :: Key -> String -> CommandReply
+set k v = aOk $ Map.insert k (ValueString v)
 
 get :: Key -> CommandReply
-get k = ensureStringValue k >> gets (StrVal . Map.lookup k)
+get k = ensureStringValue k
+        >> gets (ReplyStr . fmap valToString . Map.lookup k)
 
-getset :: Key -> Value -> CommandReply
-getset k v = ensureStringValue k >> state (StrVal . Map.lookup k &&& Map.insert k v)
+getset :: Key -> String -> CommandReply
+getset k v = ensureStringValue k
+             >> state (ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v))
 
-append :: Key -> Value -> CommandReply
-append k v = ensureStringValue k >> state (first (IntVal . length . fromJust) . alterAndRet (Just . (++v) . fromMaybe "") k)
+append :: Key -> String -> CommandReply
+append k v = ensureStringValue k
+             >> state (first (ReplyInt . length . valToString . fromJust) . alterAndRet (fmap ValueString . Just . (++v) . maybe "" valToString) k)
 
 strlen :: Key -> CommandReply
-strlen k = ensureStringValue k >> gets (IntVal . length . Map.findWithDefault "" k)
+strlen k = ensureStringValue k
+           >> gets (ReplyInt . length . maybe "" valToString . Map.lookup k)
 
 incr :: Key -> CommandReply
 incr k = incrby k 1
 
 incrby :: Key -> Int -> CommandReply
-incrby k i = ensureStringValue k >> state (first (>>= readMaybe) . alterAndRet (fmap (show . (+i)) . readMaybe . fromMaybe "0") k) >>= maybeToVal
+incrby k i = ensureStringValue k
+             >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . (+i)) . readMaybe . maybe "0" valToString) k)
+             >>= maybeToVal
 
 decr :: Key -> CommandReply
 decr k = decrby k 1
 
 decrby :: Key -> Int -> CommandReply
-decrby k i = ensureStringValue k >> state (first (>>= readMaybe) . alterAndRet (fmap (show . flip (-) i) . readMaybe . fromMaybe "0") k) >>= maybeToVal
+decrby k i = ensureStringValue k
+             >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . flip (-) i) . readMaybe . maybe "0" valToString) k)
+             >>= maybeToVal
 
 --- Util
 
@@ -102,10 +108,10 @@ alterAndRet f k m = (nv, i nv)
 
 replyVal :: ReplyVal -> String
 replyVal OK                = "OK"
-replyVal (IntVal i)        = show i
-replyVal (StrVal (Just s)) = show s
-replyVal (StrVal Nothing)  = "(nil)"
-replyVal (ListVal ls)      = show ls
+replyVal (ReplyInt i)        = show i
+replyVal (ReplyStr (Just s)) = show s
+replyVal (ReplyStr Nothing)  = "(nil)"
+replyVal (ReplyList ls)      = show ls
 
 finalReply :: Either RedisError ReplyVal -> String
 finalReply (Left e) = "ERR " ++ show e
@@ -115,11 +121,11 @@ aOk :: MonadState s m => (s -> s) -> m ReplyVal
 aOk f = modify f >> return OK
 
 boolVal :: Bool -> ReplyVal
-boolVal True  = IntVal 1
-boolVal False = IntVal 0
+boolVal True  = ReplyInt 1
+boolVal False = ReplyInt 0
 
 maybeToVal :: MonadError RedisError m => Maybe Int -> m ReplyVal
-maybeToVal (Just i) = return $ IntVal i
+maybeToVal (Just i) = return $ ReplyInt i
 maybeToVal Nothing  = throwError WrongType
 
 idUnless :: Eq a => a -> a -> a -> a

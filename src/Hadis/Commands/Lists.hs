@@ -1,8 +1,6 @@
 module Hadis.Commands.Lists where
 
 ---
-import           Hadis.Types
-import           Hadis.Util
 import           Hadis.Util.Commands
 import           Data.Map (Map)
 import qualified Data.Map as Map
@@ -20,11 +18,6 @@ lpush k v = ensureList k
 lpop :: Key -> CommandReply
 lpop k = ensureList k
        >> state (\m ->
-           let v = Map.lookup k m
-               (h, t) = (maybeHead &&& sureTail) $ maybe [] valToList v
-               nm = Map.insert k (ValueList t) m
+           let (h, t) = (maybeHead &&& maybeTail) $ maybe [] valToList $ Map.lookup k m
+               nm = Map.alter (const (fmap ValueList t)) k m
            in (ReplyStr h, nm))
-  where maybeHead (x:_) = Just x
-        maybeHead _     = Nothing
-        sureTail (_:xs) = xs
-        sureTail _      = []

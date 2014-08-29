@@ -1,8 +1,6 @@
 module Hadis.Commands.Keys where
 
 ---
-import           Hadis.Types
-import           Hadis.Util
 import           Hadis.Util.Commands
 import           Data.Map (Map)
 import qualified Data.Map as Map

@@ -1,7 +1,6 @@
 module Hadis.Commands.Sets where
 
 ---
-import           Hadis.Types
 import           Hadis.Util
 import           Hadis.Util.Commands
 import           Hadis.Ext.State
@@ -9,7 +8,6 @@ import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Set (Set)
 import qualified Data.Set as Set
----
 
 sadd :: Key -> String -> CommandReply
 sadd k v = ensureSet k

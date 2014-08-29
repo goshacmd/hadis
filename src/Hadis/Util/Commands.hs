@@ -2,6 +2,8 @@
 
 module Hadis.Util.Commands
   ( module Hadis.Util.Commands
+  , module Hadis.Util
+  , module Hadis.Types
   , state
   , gets
   , modify
@@ -9,6 +11,7 @@ module Hadis.Util.Commands
 
 ---
 import           Hadis.Types
+import           Hadis.Util
 import           Hadis.Ext.Error
 import           Data.Map            (Map)
 import qualified Data.Map as Map

@@ -10,10 +10,7 @@ import Hadis.Commands.Sets    as C
 
 ---
 import           Hadis.Types
-import           Hadis.Util
 import           Hadis.Util.Commands
-import           Data.Map (Map)
-import qualified Data.Map as Map
 import           Control.Monad.State    (MonadState, runStateT)
 import           Control.Monad.Error    (MonadError, runErrorT)
 ---

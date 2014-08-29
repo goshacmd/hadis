@@ -59,7 +59,7 @@ exists :: Key -> CommandReply
 exists k = gets $ ReplyInt . boolToInt . Map.member k
 
 kType :: Key -> CommandReply
-kType k = gets $ ReplyStr . Just . \m -> if Map.member k m then "string" else "none"
+kType k = gets $ ReplyStr . Just . maybe "none" valType . Map.lookup k
 
 --- Commands: strings
 

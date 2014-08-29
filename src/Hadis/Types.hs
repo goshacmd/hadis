@@ -51,14 +51,16 @@ data Command = DEL Key
              | SISMEMBER Key String
              deriving (Show, Read)
 
+valType :: Value -> String
+valType (ValueString _) = "string"
+valType (ValueList _)   = "list"
+valType (ValueSet _)    = "set"
+
 isStringVal :: Value -> Bool
-isStringVal (ValueString _) = True
-isStringVal _               = False
+isStringVal x = valType x == "string"
 
 isListVal :: Value -> Bool
-isListVal (ValueList _) = True
-isListVal _             = False
+isListVal x = valType x == "list"
 
 isSetVal :: Value -> Bool
-isSetVal (ValueSet _) = True
-isSetVal _            = False
+isSetVal x = valType x == "set"

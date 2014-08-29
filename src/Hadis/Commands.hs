@@ -3,38 +3,35 @@
 module Hadis.Commands where
 
 ---
+import           Hadis.Types
 import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Maybe
-import qualified Control.Monad.State as S
-import           Control.Monad.State (StateT, state, gets, modify)
-import           Control.Monad.Identity
-import           Control.Monad.Error
-import           Control.Arrow
-import           Text.Read hiding (lift)
-import           Text.Regex.Glob.String
+import           Data.Maybe             (fromMaybe, fromJust)
+import           Control.Monad.State    (MonadState, runStateT, state, gets, modify)
+import           Control.Monad.Error    (MonadError, runErrorT, throwError)
+import           Control.Arrow          ((&&&), first)
+import           Text.Read              (readMaybe)
+import           Text.Regex.Glob.String (match)
 ---
 
-type Key = String
-type Value = String
-type KVMap = Map Key Value
-data KeyType = KeyString | KeyNone deriving (Show)
-type StateKVIO = StateT KVMap IO
-
-data RedisError = WrongType deriving (Show, Eq)
-
-instance Error RedisError where
-
-data ReplyVal = OK
-              | IntVal Int
-              | StrVal (Maybe String)
-              | ListVal [String]
-              deriving (Show, Eq)
-
-type CommandReply = ErrorT RedisError StateKVIO ReplyVal
-
 runCommand :: KVMap -> CommandReply -> IO (Either RedisError ReplyVal, KVMap)
-runCommand s c = S.runStateT (runErrorT c) s
+runCommand s c = runStateT (runErrorT c) s
+
+commandFor :: Command -> CommandReply
+commandFor (DEL k)      = del k
+commandFor (RENAME o n) = rename o n
+commandFor (EXISTS k)   = exists k
+commandFor (TYPE k)     = kType k
+commandFor (KEYS p)     = keys p
+commandFor (SET k v)    = set k v
+commandFor (GET k)      = get k
+commandFor (GETSET k v) = getset k v
+commandFor (APPEND k v) = append k v
+commandFor (STRLEN k)   = strlen k
+commandFor (INCR k)     = incr k
+commandFor (INCRBY k i) = incrby k i
+commandFor (DECR k)     = decr k
+commandFor (DECRBY k i) = decrby k i
 
 --- Commands: keys
 
@@ -102,7 +99,7 @@ finalReply :: Either RedisError ReplyVal -> String
 finalReply (Left e) = "ERR " ++ show e
 finalReply (Right x) = replyVal x
 
-aOk :: S.MonadState s m => (s -> s) -> m ReplyVal
+aOk :: MonadState s m => (s -> s) -> m ReplyVal
 aOk f = modify f >> return OK
 
 boolVal :: Bool -> ReplyVal

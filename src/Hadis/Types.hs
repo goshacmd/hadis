@@ -13,6 +13,7 @@ type ErrorState = ErrorT RedisError AppState
 type CommandReply = ErrorState ReplyVal
 
 data Value = ValueString { valToString :: String }
+           | ValueList { valToList :: [String] }
            deriving (Show, Eq)
 
 data RedisError = WrongType
@@ -40,8 +41,14 @@ data Command = DEL Key
              | INCRBY Key Int
              | DECR Key
              | DECRBY Key Int
+             | LLEN Key
+             | LPUSH Key String
              deriving (Show, Read)
 
 isStringVal :: Value -> Bool
 isStringVal (ValueString _) = True
 isStringVal _               = False
+
+isListVal :: Value -> Bool
+isListVal (ValueList _) = True
+isListVal _             = False

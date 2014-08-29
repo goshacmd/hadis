@@ -33,15 +33,17 @@ commandFor (INCR k)     = incr k
 commandFor (INCRBY k i) = incrby k i
 commandFor (DECR k)     = decr k
 commandFor (DECRBY k i) = decrby k i
+commandFor (LLEN k)     = llen k
+commandFor (LPUSH k v)  = lpush k v
 
-isStringValue :: Key -> KVMap -> Bool
-isStringValue k m = maybe True isStringVal $ Map.lookup k m
+ensure :: (Value -> Bool) -> Key -> ErrorState ()
+ensure f k = check WrongType (maybe True f . Map.lookup k)
 
-ensure :: (KVMap -> Bool) -> ErrorState ()
-ensure = check WrongType
+ensureString :: Key -> ErrorState ()
+ensureString = ensure isStringVal
 
-ensureStringValue :: Key -> ErrorState ()
-ensureStringValue = ensure . isStringValue
+ensureList :: Key -> ErrorState ()
+ensureList = ensure isListVal
 
 --- Commands: keys
 
@@ -66,26 +68,26 @@ set :: Key -> String -> CommandReply
 set k v = aOk $ Map.insert k (ValueString v)
 
 get :: Key -> CommandReply
-get k = ensureStringValue k
+get k = ensureString k
         >> gets (ReplyStr . fmap valToString . Map.lookup k)
 
 getset :: Key -> String -> CommandReply
-getset k v = ensureStringValue k
+getset k v = ensureString k
              >> state (ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v))
 
 append :: Key -> String -> CommandReply
-append k v = ensureStringValue k
+append k v = ensureString k
              >> state (first (ReplyInt . length . valToString . fromJust) . alterAndRet (fmap ValueString . Just . (++v) . maybe "" valToString) k)
 
 strlen :: Key -> CommandReply
-strlen k = ensureStringValue k
+strlen k = ensureString k
            >> gets (ReplyInt . length . maybe "" valToString . Map.lookup k)
 
 incr :: Key -> CommandReply
 incr k = incrby k 1
 
 incrby :: Key -> Int -> CommandReply
-incrby k i = ensureStringValue k
+incrby k i = ensureString k
              >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . (+i)) . readMaybe . maybe "0" valToString) k)
              >>= maybeToVal
 
@@ -93,9 +95,19 @@ decr :: Key -> CommandReply
 decr k = decrby k 1
 
 decrby :: Key -> Int -> CommandReply
-decrby k i = ensureStringValue k
+decrby k i = ensureString k
              >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . flip (-) i) . readMaybe . maybe "0" valToString) k)
              >>= maybeToVal
+
+--- Commands: lists
+
+llen :: Key -> CommandReply
+llen k = ensureList k
+         >> gets (ReplyInt . length . maybe [] valToList . Map.lookup k)
+
+lpush :: Key -> String -> CommandReply
+lpush k v = ensureList k
+            >> state (first (ReplyInt . length . valToList . fromJust) . alterAndRet (fmap ValueList . Just . (v:) . maybe [] valToList) k)
 
 --- Util
 

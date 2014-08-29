@@ -3,6 +3,7 @@ module Hadis.Commands.Lists
   , lpush
   , lpop
   , rpush
+  , rpop
   ) where
 
 ---
@@ -37,3 +38,8 @@ lpop k = listState k $ \m ->
 
 rpush :: Key -> String -> CommandReply
 rpush k v = listState k $ alterList (++ [v]) k
+
+rpop :: Key -> CommandReply
+rpop k = listState k $ \m ->
+           let (h, t) = (maybeHead &&& maybeTail) . reverse . toList $ Map.lookup k m
+           in (ReplyStr h, Map.alter (const . toVal $ fmap reverse t) k m)

@@ -24,6 +24,7 @@ commandFor (LLEN k)        = llen k
 commandFor (LPUSH k v)     = lpush k v
 commandFor (LPOP k)        = lpop k
 commandFor (RPUSH k v)     = rpush k v
+commandFor (RPOP k)        = rpop k
 commandFor (SADD k v)      = sadd k v
 commandFor (SCARD k)       = scard k
 commandFor (SISMEMBER k v) = sismember k v

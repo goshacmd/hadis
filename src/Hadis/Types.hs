@@ -9,20 +9,20 @@ import           Control.Monad.Error (ErrorT, Error)
 type Key = String
 type Value = String
 type KVMap = Map Key Value
-type StateKVIO = StateT KVMap IO
+type AppState = StateT KVMap IO
+type ErrorState = ErrorT RedisError AppState
+type CommandReply = ErrorState ReplyVal
 
 data RedisError = WrongType
                 deriving (Show, Eq)
 
-instance Error RedisError where
+instance Error RedisError
 
 data ReplyVal = OK
               | IntVal Int
               | StrVal (Maybe String)
               | ListVal [String]
               deriving (Show, Eq)
-
-type CommandReply = ErrorT RedisError StateKVIO ReplyVal
 
 data Command = DEL Key
              | RENAME Key Key

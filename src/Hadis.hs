@@ -7,7 +7,7 @@ import           System.IO           (hFlush, stdout)
 import           Text.Read           (readMaybe)
 ---
 
-repl :: StateKVIO ()
+repl :: AppState ()
 repl = do
   line <- liftIO prompt
   m <- get

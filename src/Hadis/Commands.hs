@@ -15,7 +15,7 @@ import           Text.Read              (readMaybe)
 import           Text.Regex.Glob.String (match)
 ---
 
-runCommand :: KVMap -> CommandReply -> IO (Either RedisError ReplyVal, KVMap)
+runCommand :: KVMap -> ErrorState a -> IO (Either RedisError a, KVMap)
 runCommand s c = runStateT (runErrorT c) s
 
 commandFor :: Command -> CommandReply

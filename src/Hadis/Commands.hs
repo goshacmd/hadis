@@ -74,9 +74,10 @@ getset :: Key -> String -> CommandReply
 getset k v = ensureString k
            >> state (ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v))
 
+
 append :: Key -> String -> CommandReply
 append k v = ensureString k
-           >> state (first (ReplyInt . length . valToString . fromJust) . alterAndRet (fmap ValueString . Just . (++v) . maybe "" valToString) k)
+           >> state (kvAlter ((++v) . maybe "" valToString) (Just . ValueString) (ReplyInt . length) k)
 
 strlen :: Key -> CommandReply
 strlen k = ensureString k
@@ -87,7 +88,7 @@ incr k = incrby k 1
 
 incrby :: Key -> Int -> CommandReply
 incrby k i = ensureString k
-           >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . (+i)) . readMaybe . maybe "0" valToString) k)
+           >> state (kvAlter (fmap (show . (+i)) . readMaybe . maybe "0" valToString) (fmap ValueString) (>>= readMaybe) k)
            >>= maybeToVal
 
 decr :: Key -> CommandReply
@@ -95,7 +96,7 @@ decr k = decrby k 1
 
 decrby :: Key -> Int -> CommandReply
 decrby k i = ensureString k
-           >> state (first ((>>= readMaybe) . fmap valToString) . alterAndRet (fmap (ValueString . show . flip (-) i) . readMaybe . maybe "0" valToString) k)
+           >> state (kvAlter (fmap (show . flip (-) i) . readMaybe . maybe "0" valToString) (fmap ValueString) (>>= readMaybe) k)
            >>= maybeToVal
 
 --- Commands: lists
@@ -106,7 +107,7 @@ llen k = ensureList k
 
 lpush :: Key -> String -> CommandReply
 lpush k v = ensureList k
-         >> state (first (ReplyInt . length . valToList . fromJust) . alterAndRet (fmap ValueList . Just . (v:) . maybe [] valToList) k)
+         >> state (kvAlter ((v:) . maybe [] valToList) (fmap ValueList . Just) (ReplyInt . length) k)
 
 lpop :: Key -> CommandReply
 lpop k = ensureList k
@@ -143,6 +144,11 @@ alterAndRet f k m = (nv, i nv)
         nv = f v
         i (Just a) = Map.insert k a m
         i Nothing  = m
+
+kvAlter :: Ord k => (Maybe v -> a) -> (a -> Maybe v) -> (a -> b) -> k -> Map k v -> (b, Map k v)
+kvAlter va av ab k m = (ab nv, Map.alter (const $ av nv) k m)
+  where v = Map.lookup k m
+        nv = va v
 
 replyVal :: ReplyVal -> String
 replyVal OK                = "OK"

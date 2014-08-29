@@ -1,6 +1,7 @@
 ---
 import           Hadis.Types
-import           Hadis.Commands      (commandFor, runCommand, finalReply)
+import           Hadis.Commands      (runCommand, finalReply)
+import           Hadis.CommandFor    (commandFor)
 import qualified Data.Map as Map
 import           Control.Monad.State (get, put, liftIO, evalStateT)
 import           System.IO           (hFlush, stdout)

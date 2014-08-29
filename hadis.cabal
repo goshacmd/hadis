@@ -16,9 +16,15 @@ executable hadis
   main-is: Hadis.hs
   other-modules:        Hadis.Types
                         Hadis.Util
+                        Hadis.Util.Commands
                         Hadis.Ext.Error
                         Hadis.Ext.State
                         Hadis.Commands
+                        Hadis.Commands.Keys
+                        Hadis.Commands.Strings
+                        Hadis.Commands.Lists
+                        Hadis.Commands.Sets
+                        Hadis.CommandFor
 
   build-depends:        base >=4.7 && <4.8
                       , containers >=0.5 && <0.6

@@ -7,6 +7,8 @@ import           Hadis.Types
 import           Hadis.Error (check)
 import           Data.Map (Map)
 import qualified Data.Map as Map
+import           Data.Set (Set)
+import qualified Data.Set as Set
 import           Data.Maybe             (fromMaybe, fromJust, maybe)
 import           Control.Monad.State    (MonadState, runStateT, state, gets, modify)
 import           Control.Monad.Error    (MonadError, runErrorT, throwError)
@@ -36,15 +38,8 @@ commandFor (DECRBY k i) = decrby k i
 commandFor (LLEN k)     = llen k
 commandFor (LPUSH k v)  = lpush k v
 commandFor (LPOP k)     = lpop k
-
-ensure :: (Value -> Bool) -> Key -> ErrorState ()
-ensure f k = check WrongType (maybe True f . Map.lookup k)
-
-ensureString :: Key -> ErrorState ()
-ensureString = ensure isStringVal
-
-ensureList :: Key -> ErrorState ()
-ensureList = ensure isListVal
+commandFor (SADD k v)   = sadd k v
+commandFor (SCARD k)    = scard k
 
 --- Commands: keys
 
@@ -122,6 +117,17 @@ lpop k = ensureList k
         sureTail (_:xs) = xs
         sureTail _      = []
 
+--- Commands: sets
+
+sadd :: Key -> String -> CommandReply
+sadd k v = ensureSet k
+        >> gets (ReplyInt . (\x -> if x then 0 else 1) . Set.member v . maybe Set.empty valToSet . Map.lookup k)
+        >>= \r -> state $ \m -> (r, Map.alter (fmap ValueSet . Just . Set.insert v . maybe Set.empty valToSet) k m)
+
+scard :: Key -> CommandReply
+scard k = ensureSet k
+       >> gets (ReplyInt . Set.size . maybe Set.empty valToSet . Map.lookup k)
+
 --- Util
 
 alterAndRet :: Ord a => (Maybe b -> Maybe b) -> a -> Map a b -> (Maybe b, Map a b)
@@ -155,3 +161,15 @@ maybeToVal Nothing  = throwError WrongType
 
 idUnless :: Eq a => a -> a -> a -> a
 idUnless k1 k2 x = if x == k1 then k2 else x
+
+ensure :: (Value -> Bool) -> Key -> ErrorState ()
+ensure f k = check WrongType (maybe True f . Map.lookup k)
+
+ensureString :: Key -> ErrorState ()
+ensureString = ensure isStringVal
+
+ensureList :: Key -> ErrorState ()
+ensureList = ensure isListVal
+
+ensureSet :: Key -> ErrorState ()
+ensureSet = ensure isSetVal

@@ -2,6 +2,7 @@ module Hadis.Types where
 
 ---
 import           Data.Map            (Map)
+import           Data.Set            (Set)
 import           Control.Monad.State (StateT)
 import           Control.Monad.Error (ErrorT, Error)
 ---
@@ -13,7 +14,8 @@ type ErrorState = ErrorT RedisError AppState
 type CommandReply = ErrorState ReplyVal
 
 data Value = ValueString { valToString :: String }
-           | ValueList { valToList :: [String] }
+           | ValueList   { valToList   :: [String] }
+           | ValueSet    { valToSet    :: Set String }
            deriving (Show, Eq)
 
 data RedisError = WrongType
@@ -44,6 +46,8 @@ data Command = DEL Key
              | LLEN Key
              | LPUSH Key String
              | LPOP Key
+             | SADD Key String
+             | SCARD Key
              deriving (Show, Read)
 
 isStringVal :: Value -> Bool
@@ -53,3 +57,7 @@ isStringVal _               = False
 isListVal :: Value -> Bool
 isListVal (ValueList _) = True
 isListVal _             = False
+
+isSetVal :: Value -> Bool
+isSetVal (ValueSet _) = True
+isSetVal _            = False

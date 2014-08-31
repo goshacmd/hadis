@@ -1,12 +1,12 @@
 ---
 import           Hadis.Types
-import           Hadis.Commands      (runCommand, finalReply)
-import           Hadis.CommandFor    (commandFor)
+import           Hadis.Commands          (runCommand, finalReply)
+import           Hadis.CommandFor        (commandFor)
 import qualified Data.Map as Map
-import           Control.Monad.State (get, put, liftIO, evalStateT)
-import           System.IO           (hFlush, stdout)
+import           Control.Monad.State     (get, put, lift, liftIO, evalStateT)
+import           System.IO               (hFlush, stdout)
 import           System.Console.Readline (readline, addHistory)
-import           Text.Read           (readMaybe)
+import           Text.Read               (readMaybe)
 ---
 
 repl :: AppState ()
@@ -22,7 +22,7 @@ repl = do
       case readMaybe line of
         Just command -> do
           m <- get
-          (r, n) <- liftIO . runCommand m $ commandFor command
+          (r, n) <- lift . runCommand m $ commandFor command
           put n
           liftIO . putStrLn . finalReply $ r
 

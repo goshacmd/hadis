@@ -30,10 +30,10 @@ strGets k f = ensureString k >> gets f
 strState k f = ensureString k >> state f
 
 set :: Key -> String -> CommandReply
-set k v = aOk $ Map.insert k (ValueString v)
+set k = aOk . Map.insert k . ValueString
 
 setnx :: Key -> String -> CommandReply
-setnx k v = nx k $ Map.insert k (ValueString v)
+setnx k = nx k . Map.insert k . ValueString
 
 get :: Key -> CommandReply
 get k = strGets k $ ReplyStr . fmap valToString . Map.lookup k

@@ -35,6 +35,7 @@ data Command = DEL Key
              | TYPE Key
              | KEYS String
              | SET Key String
+             | SETNX Key String
              | GET Key
              | GETSET Key String
              | APPEND Key String

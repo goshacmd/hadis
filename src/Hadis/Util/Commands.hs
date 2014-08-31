@@ -16,7 +16,7 @@ import           Hadis.Ext.Error
 import           Data.Map            (Map)
 import qualified Data.Map as Map
 import           Data.Maybe          (fromMaybe, fromJust, maybe)
-import           Control.Monad.State (MonadState, state, gets, modify)
+import           Control.Monad.State (MonadState, state, get, gets, modify)
 import           Control.Monad.Error (MonadError, throwError)
 ---
 
@@ -34,6 +34,14 @@ kvAlter va av ab k m = (ab nv, Map.alter (const $ av nv) k m)
 
 aOk :: MonadState s m => (s -> s) -> m ReplyVal
 aOk f = modify f >> return OK
+
+nx :: MonadState (Map Key a) m => Key -> (Map Key a -> Map Key a) -> m ReplyVal
+nx k f = do
+  m <- get
+
+  if Map.member k m
+  then return $ ReplyInt 0
+  else modify f >> return (ReplyInt 1)
 
 maybeToVal :: MonadError RedisError m => Maybe Int -> m ReplyVal
 maybeToVal = maybeToResult WrongType ReplyInt

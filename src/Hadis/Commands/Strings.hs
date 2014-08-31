@@ -1,5 +1,6 @@
 module Hadis.Commands.Strings
   ( set
+  , setnx
   , get
   , getset
   , append
@@ -30,6 +31,9 @@ strState k f = ensureString k >> state f
 
 set :: Key -> String -> CommandReply
 set k v = aOk $ Map.insert k (ValueString v)
+
+setnx :: Key -> String -> CommandReply
+setnx k v = nx k $ Map.insert k (ValueString v)
 
 get :: Key -> CommandReply
 get k = strGets k $ ReplyStr . fmap valToString . Map.lookup k

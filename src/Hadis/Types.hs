@@ -47,8 +47,10 @@ data Command = DEL Key
              | DECRBY Key Int
              | LLEN Key
              | LPUSH Key String
+             | LPUSHX Key String
              | LPOP Key
              | RPUSH Key String
+             | RPUSHX Key String
              | RPOP Key
              | SADD Key String
              | SCARD Key

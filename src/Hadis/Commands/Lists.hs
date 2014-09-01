@@ -1,8 +1,10 @@
 module Hadis.Commands.Lists
   ( llen
   , lpush
+  , lpushx
   , lpop
   , rpush
+  , rpushx
   , rpop
   ) where
 
@@ -31,6 +33,9 @@ llen k = listGets k $ ReplyInt . length . toList . Map.lookup k
 lpush :: Key -> String -> CommandReply
 lpush k v = listState k $ alterList (v:) k
 
+lpushx :: Key -> String -> CommandReply
+lpushx k v = ensureList k >> x k (const $ ReplyInt 0) (alterList (v:) k)
+
 lpop :: Key -> CommandReply
 lpop k = listState k $ \m ->
            let (h, t) = (maybeHead &&& maybeTail) . toList $ Map.lookup k m
@@ -38,6 +43,9 @@ lpop k = listState k $ \m ->
 
 rpush :: Key -> String -> CommandReply
 rpush k v = listState k $ alterList (++ [v]) k
+
+rpushx :: Key -> String -> CommandReply
+rpushx k v = ensureList k >> x k (const $ ReplyInt 0) (alterList (++ [v]) k)
 
 rpop :: Key -> CommandReply
 rpop k = listState k $ \m ->

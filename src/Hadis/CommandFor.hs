@@ -8,6 +8,7 @@ import Hadis.Commands
 commandFor :: Command -> CommandReply
 commandFor (DEL k)         = del k
 commandFor (RENAME o n)    = rename o n
+commandFor (RENAMENX o n)  = renamenx o n
 commandFor (EXISTS k)      = exists k
 commandFor (TYPE k)        = kType k
 commandFor (KEYS p)        = keys p

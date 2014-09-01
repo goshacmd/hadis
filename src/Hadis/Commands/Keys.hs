@@ -2,6 +2,7 @@ module Hadis.Commands.Keys
   ( del
   , keys
   , rename
+  , renamenx
   , exists
   , kType
   ) where
@@ -14,13 +15,16 @@ import           Text.Regex.Glob.String (match)
 ---
 
 del :: Key -> CommandReply
-del k = aOk $ Map.delete k
+del = aOk . Map.delete
 
 keys :: String -> CommandReply
 keys pattern = gets $ ReplyList . filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (idUnless k1 k2)
+
+renamenx :: Key -> Key -> CommandReply
+renamenx k1 k2 = nx k2 $ Map.mapKeys (idUnless k1 k2)
 
 exists :: Key -> CommandReply
 exists k = gets $ ReplyInt . boolToInt . Map.member k

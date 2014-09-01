@@ -31,6 +31,7 @@ data ReplyVal = OK
 
 data Command = DEL Key
              | RENAME Key Key
+             | RENAMENX Key Key
              | EXISTS Key
              | TYPE Key
              | KEYS String

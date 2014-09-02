@@ -56,6 +56,7 @@ data Command = DEL Key
              | SADD Key String
              | SCARD Key
              | SISMEMBER Key String
+             | SMEMBERS Key
              deriving (Show, Read)
 
 valType :: Value -> String

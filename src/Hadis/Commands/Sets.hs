@@ -2,6 +2,7 @@ module Hadis.Commands.Sets
   ( sadd
   , scard
   , sismember
+  , smembers
   ) where
 
 ---
@@ -28,3 +29,6 @@ scard k = setGets k $ ReplyInt . Set.size . getSet k
 
 sismember :: Key -> String -> CommandReply
 sismember k v = setGets k $ ReplyInt . boolToInt . Set.member v . getSet k
+
+smembers :: Key -> CommandReply
+smembers k = setGets k $ ReplyList . map (ReplyStr . Just) . Set.elems . getSet k

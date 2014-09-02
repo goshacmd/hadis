@@ -33,3 +33,4 @@ commandFor (RPOP k)        = rpop k
 commandFor (SADD k v)      = sadd k v
 commandFor (SCARD k)       = scard k
 commandFor (SISMEMBER k v) = sismember k v
+commandFor (SMEMBERS k)    = smembers k

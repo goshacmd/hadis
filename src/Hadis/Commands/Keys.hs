@@ -18,7 +18,7 @@ del :: Key -> CommandReply
 del = aOk . Map.delete
 
 keys :: String -> CommandReply
-keys pattern = gets $ ReplyList . filter (match pattern) . Map.keys
+keys pattern = gets $ ReplyList . map (ReplyStr . Just) . filter (match pattern) . Map.keys
 
 rename :: Key -> Key -> CommandReply
 rename k1 k2 = aOk $ Map.mapKeys (idUnless k1 k2)

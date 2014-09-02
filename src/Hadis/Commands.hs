@@ -13,6 +13,7 @@ import           Hadis.Types
 import           Hadis.Util.Commands
 import           Control.Monad.State    (MonadState, runStateT)
 import           Control.Monad.Error    (MonadError, runErrorT)
+import Data.List (intercalate)
 ---
 
 runCommand :: KVMap -> ErrorState a -> IO (Either RedisError a, KVMap)
@@ -25,7 +26,7 @@ replyVal OK                = "OK"
 replyVal (ReplyInt i)        = show i
 replyVal (ReplyStr (Just s)) = show s
 replyVal (ReplyStr Nothing)  = "(nil)"
-replyVal (ReplyList ls)      = show ls
+replyVal (ReplyList ls)      = intercalate "\n" $ zipWith (\x i -> show i ++ ") " ++ replyVal x) ls [1..]
 
 finalReply :: Either RedisError ReplyVal -> String
 finalReply (Left e) = "ERR " ++ show e

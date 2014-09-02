@@ -26,7 +26,7 @@ instance Error RedisError
 data ReplyVal = OK
               | ReplyInt Int
               | ReplyStr (Maybe String)
-              | ReplyList [String]
+              | ReplyList [ReplyVal]
               deriving (Show, Eq)
 
 data Command = DEL Key

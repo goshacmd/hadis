@@ -11,9 +11,9 @@ import Hadis.Commands.Sets    as C
 ---
 import           Hadis.Types
 import           Hadis.Util.Commands
+import           Data.List              (intercalate)
 import           Control.Monad.State    (MonadState, runStateT)
 import           Control.Monad.Error    (MonadError, runErrorT)
-import Data.List (intercalate)
 ---
 
 runCommand :: KVMap -> ErrorState a -> IO (Either RedisError a, KVMap)

@@ -15,6 +15,7 @@ commandFor (KEYS p)        = keys p
 commandFor (SET k v)       = set k v
 commandFor (SETNX k v)     = setnx k v
 commandFor (GET k)         = get k
+commandFor (MGET ks)       = mget ks
 commandFor (GETSET k v)    = getset k v
 commandFor (APPEND k v)    = append k v
 commandFor (STRLEN k)      = strlen k

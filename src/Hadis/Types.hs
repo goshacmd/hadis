@@ -38,6 +38,7 @@ data Command = DEL Key
              | SET Key String
              | SETNX Key String
              | GET Key
+             | MGET [Key]
              | GETSET Key String
              | APPEND Key String
              | STRLEN Key

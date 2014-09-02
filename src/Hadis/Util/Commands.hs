@@ -54,6 +54,10 @@ x k f1 f = do
 maybeToVal :: MonadError RedisError m => Maybe Int -> m ReplyVal
 maybeToVal = maybeToResult WrongType ReplyInt
 
+strOrNil :: Maybe Value -> ReplyVal
+strOrNil (Just (ValueString x)) = ReplyStr $ Just x
+strOrNil _                      = ReplyStr Nothing
+
 ensure :: (Value -> Bool) -> Key -> ErrorState ()
 ensure f k = check WrongType (maybe True f . Map.lookup k)
 

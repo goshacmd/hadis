@@ -2,6 +2,7 @@ module Hadis.Commands.Strings
   ( set
   , setnx
   , get
+  , mget
   , getset
   , append
   , strlen
@@ -37,6 +38,9 @@ setnx k = nx k . Map.insert k . ValueString
 
 get :: Key -> CommandReply
 get k = strGets k $ ReplyStr . fmap valToString . Map.lookup k
+
+mget :: [Key] -> CommandReply
+mget ks = gets $ \m -> ReplyList $ map (strOrNil . flip Map.lookup m) ks
 
 getset :: Key -> String -> CommandReply
 getset k v = strState k $ ReplyStr . fmap valToString . Map.lookup k &&& Map.insert k (ValueString v)

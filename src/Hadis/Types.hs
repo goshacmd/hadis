@@ -72,3 +72,7 @@ isListVal x = valType x == "list"
 
 isSetVal :: Value -> Bool
 isSetVal x = valType x == "set"
+
+valToMaybeString :: Value -> Maybe String
+valToMaybeString (ValueString x) = Just x
+valToMaybeString _               = Nothing

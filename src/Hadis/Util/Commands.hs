@@ -20,13 +20,6 @@ import           Control.Monad.State (MonadState, state, get, put, gets, modify)
 import           Control.Monad.Error (MonadError, throwError)
 ---
 
-alterAndRet :: Ord a => (Maybe b -> Maybe b) -> a -> Map a b -> (Maybe b, Map a b)
-alterAndRet f k m = (nv, i nv)
-  where v = Map.lookup k m
-        nv = f v
-        i (Just a) = Map.insert k a m
-        i Nothing  = m
-
 kvAlter :: Ord k => (Maybe v -> a) -> (a -> Maybe v) -> (a -> b) -> k -> Map k v -> (b, Map k v)
 kvAlter va av ab k m = (ab nv, Map.alter (const $ av nv) k m)
   where v = Map.lookup k m

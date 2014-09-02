@@ -18,6 +18,8 @@ data Value = ValueString { valToString :: String }
            | ValueSet    { valToSet    :: Set String }
            deriving (Show, Eq)
 
+type Pred = Value -> Bool
+
 data RedisError = WrongType
                 deriving (Show, Eq)
 

@@ -27,7 +27,7 @@ renamenx :: Key -> Key -> CommandReply
 renamenx k1 k2 = nx k2 $ Map.mapKeys (idUnless k1 k2)
 
 exists :: Key -> CommandReply
-exists k = gets $ ReplyInt . boolToInt . Map.member k
+exists k = gets $ replyBool . Map.member k
 
 kType :: Key -> CommandReply
 kType k = gets $ ReplyStr . Just . maybe "none" valType . Map.lookup k

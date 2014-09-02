@@ -16,23 +16,21 @@ import qualified Data.Set as Set
 ---
 
 toSet = maybe Set.empty valToSet
-getSet k = toSet . Map.lookup k
-setGets k f = ensureSet k >> gets f
 
 onSet :: (Set String -> ReplyVal) -> Key -> CommandReply
-onSet f k = setGets k $ f . getSet k
+onSet = on isSetVal toSet
 
 ---
 
 sadd :: Key -> String -> CommandReply
-sadd k v = onSet (ReplyInt . boolToInt . Set.notMember v) k
+sadd k v = onSet (replyBool . Set.notMember v) k
         >>= preserveModify (Map.alter (Just . ValueSet . Set.insert v . toSet) k)
 
 scard :: Key -> CommandReply
 scard = onSet $ ReplyInt . Set.size
 
 sismember :: Key -> String -> CommandReply
-sismember k v = flip onSet k $ ReplyInt . boolToInt . Set.member v
+sismember k v = flip onSet k $ replyBool . Set.member v
 
 smembers :: Key -> CommandReply
 smembers = onSet $ ReplyList . map (ReplyStr . Just) . Set.elems

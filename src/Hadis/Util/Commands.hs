@@ -56,7 +56,7 @@ maybeToVal = maybeToResult WrongType ReplyInt
 strOrNil :: Maybe Value -> ReplyVal
 strOrNil = ReplyStr . (>>= valToMaybeString)
 
-ensure :: (Value -> Bool) -> Key -> ErrorState ()
+ensure :: Pred -> Key -> ErrorState ()
 ensure f k = check WrongType (maybe True f . Map.lookup k)
 
 ensureString :: Key -> ErrorState ()
@@ -65,5 +65,8 @@ ensureString = ensure isStringVal
 ensureList :: Key -> ErrorState ()
 ensureList = ensure isListVal
 
-ensureSet :: Key -> ErrorState ()
-ensureSet = ensure isSetVal
+replyBool :: Bool -> ReplyVal
+replyBool = ReplyInt . boolToInt
+
+on :: Pred -> (Maybe Value -> a) -> (a -> ReplyVal) -> Key -> CommandReply
+on pred mapper val k = ensure pred k >> gets (val . mapper . Map.lookup k)
